@@ -3,6 +3,7 @@ package love.marblegate.evilgemira
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import love.marblegate.evilgemira.EvilService.saveTo
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.event.events.MessageRecallEvent
 import net.mamoe.mirai.message.data.*
@@ -69,7 +70,8 @@ object GemiraService {
         return true
     }
 
-    private fun save(event: GroupMessageEvent) {
+    private fun save(message: MessageChain) {
+        message.saveTo("TODO")
         // TODO use EvilService shit to save content to local
     }
 }
