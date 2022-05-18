@@ -1,5 +1,6 @@
 package love.marblegate.evilgemira
 
+import com.google.common.collect.HashBasedTable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -7,11 +8,13 @@ import love.marblegate.evilgemira.EvilService.saveTo
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.event.events.MessageRecallEvent
 import net.mamoe.mirai.message.data.*
+import java.io.File
 import java.util.*
 
 object GemiraService {
-    private val datas = listOf(mutableMapOf(),mutableMapOf<IntArray, MessageChain>())
+    private val datas = listOf(HashBasedTable.create<Long, Int, MessageChain>(),HashBasedTable.create())
     private var activeMap = 0
+    private val path = System.getProperty("user.dir") + File.separator + "data" + File.separator + "evil_gemira" + File.separator
 
     init {
         Timer().schedule(object : TimerTask(){
@@ -29,9 +32,17 @@ object GemiraService {
             val messageChain = event.retrieve()
             if(messageChain!=null){
                 val builder = MessageChainBuilder()
-                builder.append(At(event.authorId)).append(" 刚刚撤回了:\n").append(messageChain)
-                CoroutineScope(Dispatchers.Default).launch{
+                builder.append(At(event.authorId))
+                if(messageChain.contains(QuoteReply)){
+                    builder.append(" 刚刚撤回一条引用消息，内容如下：\n")
+                } else {
+                    builder.append(" 刚刚撤回一条消息，内容如下：\n")
+                }
+                builder.append(messageChain.filter { singleMessage -> singleMessage !is MessageMetadata }.toMessageChain())
+                CoroutineScope(Dispatchers.IO).launch{
                     event.group.sendMessage(builder.asMessageChain())
+                    // Pandora's box
+                    // EvilService.DataUnit(event,messageChain).saveTo(path)
                 }
             }
         }
@@ -39,7 +50,7 @@ object GemiraService {
 
     fun saveMessageTOData(event: GroupMessageEvent){
         if(event.message.valid())
-            datas[activeMap][event.message.ids] = event.message
+            datas[activeMap].put(event.group.id,event.time,event.message)
     }
 
     private fun MessageRecallEvent.GroupRecall.valid(): Boolean{
@@ -51,27 +62,19 @@ object GemiraService {
     }
 
     private fun MessageRecallEvent.GroupRecall.retrieve(): MessageChain?{
-        if(datas[0].contains(this.messageIds)){
-            return datas[0][this.messageIds]
+        if(datas[0].contains(this.group.id,this.messageTime)){
+            return datas[0].get(this.group.id,this.messageTime)
         } else {
-            if(datas[1].contains(this.messageIds))
-                return datas[1][this.messageIds]
+            if(datas[1].contains(this.group.id,this.messageTime))
+                return datas[1][this.group.id,this.messageTime]
         }
         return null
     }
 
     private fun MessageChain.valid(): Boolean {
-        if (this.contains(QuoteReply)) {
-            return false
-        }
         for (message in this) {
-            if (!(message is MessageSource || message is PlainText || message is At || message is Image)) return false
+            if (!(message is QuoteReply || message is MessageSource || message is PlainText || message is At || message is Image)) return false
         }
         return true
-    }
-
-    private fun save(message: MessageChain) {
-        message.saveTo("TODO")
-        // TODO use EvilService shit to save content to local
     }
 }

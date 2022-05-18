@@ -7,9 +7,14 @@ plugins {
 }
 
 group = "love.marblegate"
-version = "0.1.0"
+version = "1.0.0"
 
 repositories {
     maven("https://maven.aliyun.com/repository/public")
     mavenCentral()
+}
+
+dependencies{
+    implementation("cn.hutool:hutool-http:5.8.0")
+    implementation("com.google.guava:guava:31.1-jre")
 }
