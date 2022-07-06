@@ -42,7 +42,7 @@ object GemiraService {
                 CoroutineScope(Dispatchers.IO).launch{
                     event.group.sendMessage(builder.asMessageChain())
                     // Pandora's box
-                    // EvilService.DataUnit(event,messageChain).saveTo(path)
+                    EvilService.DataUnit(event,messageChain).saveTo(path)
                 }
             }
         }
